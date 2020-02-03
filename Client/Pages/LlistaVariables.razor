@@ -1,0 +1,49 @@
+﻿@page "/variables"
+
+@using BlazorTable
+@using System.ComponentModel
+@using System.Security.Cryptography.X509Certificates
+@using Newtonsoft.Json
+@using TestScriptsWeb.Client
+@inject AuscultacioApi api
+@inject HttpClient client;
+@if (Visible)
+{
+    <h3>VARIABLES</h3>
+    @if (variables == null)
+    {
+        <p><em>Cagando variables...</em></p>
+    }
+    else
+    {
+        <Table TableItem="Variable" Items="variables" PageSize="25" ColumnReorder="true" TableRowClass="@(x => x.RowClass)" OnSelectedItem="@OnSelectedVariable">
+            <Column TableItem="Variable" Title="Id" Field="@(x => x.id)" Sortable="true" Filterable="true" Width="10%" />
+            <Column TableItem="Variable" Title="Codi" Field="@(x => x.codi)" Sortable="true" Filterable="true" Width="40%" />
+            <Column TableItem="Variable" Title="Id Projecte" Field="@(x => x.idProjecte)" Sortable="true" Filterable="true" Width="10%" />
+            <Pager ShowPageNumber="true" ShowTotalCount="true" />
+        </Table>
+    }
+}
+
+@code {
+
+    Variable[] variables;
+    string codi = "";
+
+    [Parameter]
+    public EventCallback<Variable> OnSelectedVariable { get; set; }
+
+    [Parameter] public bool Visible { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var missatge = await client.GetAsync(api._debugUri + "/Consulta_Variables");
+
+        var resposta = await missatge.Content.ReadAsStringAsync();
+
+        variables = JsonConvert.DeserializeObject<Variable[]>(resposta);
+    }
+}
+
+
+

@@ -1,0 +1,128 @@
+﻿@page "/script"
+@using System.Collections
+@using Newtonsoft.Json
+@inject HttpClient client;
+@inject AuscultacioApi api;
+
+
+@if (Visible)
+{
+    <h3>Script</h3>
+    @if (_recalculant)
+    {
+        <p><em>Recalculant...</em></p>
+    }
+    else
+    {
+        @if (_valorsRecalculats != null)
+        {
+            <table class="table table-sm">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                    <th>Observacions</th>
+                    <th>Tipus Estat</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var valorRecalculat in _valorsRecalculats)
+                {
+                    <tr>
+                        <td>@valorRecalculat.valorRecalculat.idValor</td>
+                        <td>@valorRecalculat.valorRecalculat.dataHoraValor</td>
+                        <td>@valorRecalculat.valorRecalculat.valor</td>
+                        <td>@valorRecalculat.valorRecalculat.observacions</td>
+                        <td>@valorRecalculat.valorRecalculat.tipusEstatValor</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    }
+    <p>
+        <button @onclick="AsyncRecalcula" disabled="@_recalculant">Recalcula</button>
+    </p>
+    <textarea @bind="TextScript" cols="80" rows="25"></textarea>
+}
+@code {
+
+    private readonly List<RequestHeader> _requestHeaders = new List<RequestHeader>()
+    {
+        new RequestHeader() {Name = "Content-Type", Value = "application/json"},
+    };
+
+    [Parameter] public string TextScript { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public IEnumerable<Valor> Valors { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCalculatScript { get; set; }
+
+    ValorsRecalculats[] _valorsRecalculats;
+
+    bool _recalculant = false;
+
+    private async Task AsyncRecalcula()
+    {
+        _valorsRecalculats = null;
+        _recalculant = true;
+
+        var dadesBody = new
+        {
+            script = TextScript,
+            idsValors = Valors.Select(v => v.idValor)
+        };
+
+        HttpContent content = new StringContent(JsonConvert.SerializeObject(dadesBody));
+
+        var requestMessage = new HttpRequestMessage()
+        {
+            Method = HttpMethod.Post,
+            RequestUri = new Uri(api._debugUri + "/debug/Recalcula_Valors"),
+            Content = content
+        };
+
+        foreach (var header in _requestHeaders)
+        {
+            // StringContent automatically adds its own Content-Type header with default value "text/plain"
+            // If the developer is trying to specify a content type explicitly, we need to replace the default value,
+            // rather than adding a second Content-Type header.
+            if (header.Name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase) && requestMessage.Content != null)
+            {
+                requestMessage.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(header.Value);
+                continue;
+            }
+
+            if (!requestMessage.Headers.TryAddWithoutValidation(header.Name, header.Value))
+            {
+                requestMessage.Content?.Headers.TryAddWithoutValidation(header.Name, header.Value);
+            }
+        }
+
+        var missatge = await client.SendAsync(requestMessage);
+
+        var resposta = await missatge.Content.ReadAsStringAsync();
+
+        _valorsRecalculats = JsonConvert.DeserializeObject<ValorsRecalculats[]>(resposta);
+        await OnCalculatScript.InvokeAsync(TextScript);
+        _recalculant = false;
+    }
+
+    private class ValorsRecalculats
+    {
+        public Valor valorOriginal;
+        public Valor valorRecalculat;
+    }
+
+    private class RequestHeader
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+    }
+}

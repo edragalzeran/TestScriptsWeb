@@ -1,0 +1,88 @@
+﻿@page "/valors"
+
+@using BlazorTable
+@using System.ComponentModel
+@using System.Security.Cryptography.X509Certificates
+@using Newtonsoft.Json
+@using TestScriptsWeb.Client
+@inject HttpClient client;
+@inject AuscultacioApi api;
+@if (Visible)
+{
+    <h3>VALORS</h3>
+    @if (_valors == null)
+    {
+        if (Variable.id >= 0)
+        {
+            <p><em>Cagando valores...</em></p>
+        }
+        else
+        {
+            <p><em>Ninguna variable seleccionada</em></p>
+        }
+    }
+    else
+    {
+        <input type="date" class="form-control form-control-sm" @bind-value="_data"/>
+        <button @onclick="AsyncRecarrega">Recarrega</button>
+        <Table TableItem="Valor" Items="_valors" PageSize="15" ColumnReorder="true" TableRowClass="@(x => x.RowClass)" OnSelectedItem="@OnSelectedValor" MultiSelect="true">
+            <Column TableItem="Valor" Title="Id" Field="@(x => x.idValor)" Sortable="true" Filterable="true" Width="10%" />
+            <Column TableItem="Valor" Title="DataHora" Field="@(x => x.dataHoraValor)" Sortable="true" Filterable="true" Width="10%" />
+            <Column TableItem="Valor" Title="Valor" Field="@(x => x.valor)" Sortable="true" Filterable="true" Width="10%" />
+            <Column TableItem="Valor" Title="Observacions" Field="@(x => x.observacions)" Sortable="true" Filterable="true" Width="20%" />
+            <Column TableItem="Valor" Title="Estat" Field="@(x => x.tipusEstatValor)" Sortable="true" Filterable="true" Width="10%" />
+            <Column TableItem="Valor" Title="Tipus" Field="@(x => x.tipusValor)" Sortable="true" Filterable="true" Width="10%" />
+            <Pager ShowPageNumber="true" ShowTotalCount="true" />
+        </Table>
+    }
+}
+
+@code {
+    Valor[] _valors = null;
+
+    DateTime _data = new DateTime(DateTime.Now.Year, 1, 1);
+
+    [Parameter]
+    public EventCallback<Valor> OnSelectedValor { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public Variable Variable { get; set; }
+
+    Variable _variableCarregada = new Variable()
+    {
+        id = -1
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Visible && Variable.id != _variableCarregada.id)
+        {
+            _valors = null;
+
+            var missatge = await client.GetAsync(api._debugUri + "/Consulta_Valors_Variable/" + Variable.id + "/" + _data.ToString("O"));
+
+            var resposta = await missatge.Content.ReadAsStringAsync();
+
+            _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
+
+            _variableCarregada = Variable;
+        }
+    }
+
+    async Task AsyncRecarrega()
+    {
+        _valors = null;
+
+        var missatge = await client.GetAsync(api._debugUri + "/Consulta_Valors_Variable/" + Variable.id + "/" + _data.ToString("O"));
+
+        var resposta = await missatge.Content.ReadAsStringAsync();
+
+        _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
+
+        _variableCarregada = Variable;
+    }
+
+}

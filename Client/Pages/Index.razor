@@ -1,0 +1,160 @@
+﻿@page "/"
+@using Blazorise
+@inject AuscultacioApi api
+@inject LocalStorageService localStorage
+@inject NavigationManager MyNavigationManager
+
+
+<header class="top-row px-4">
+    <!--<p>@api._debugUri</p>-->    
+        <p>Variable: @VariableActual.codi</p>    
+</header>
+    <Tabs  SelectedTabChanged="@SelectedTab">
+        <Tab Name="variables" IsActive="@VariablesVisible">Variables</Tab>
+        <Tab Name="valors" IsActive="@ValorsVisible">Valors</Tab>
+        <Tab Name="script" IsActive="@ScriptsVisible">Script</Tab>
+    </Tabs>
+    <TabsContent>
+        <TabPanel Name="variables" IsActive="@VariablesVisible">
+            <LlistaVariables OnSelectedVariable="@VariableSeleccionada" Visible="@VariablesVisible"></LlistaVariables>
+        </TabPanel>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                    <th>Observacions</th>
+                    <th>Tipus Estat</th>
+                </tr>
+            </thead>
+            @foreach (var valor in ValorsSeleccionats)
+            {
+                <tr>
+                    <td>@valor.idValor</td>
+                    <td>@valor.dataHoraValor</td>
+                    <td>@valor.valor</td>
+                    <td>@valor.observacions</td>
+                    <td>@valor.tipusEstatValor</td>
+                </tr>
+            }
+        </table>
+
+        <button @onclick="@(() =>
+                  {
+                      VariablesVisible = !VariablesVisible;
+                      localStorage.SetItem("VariablesVisible",VariablesVisible);
+                  })">
+            Variables
+        </button>
+        <button @onclick="@(() =>
+                  {
+                      ValorsVisible = !ValorsVisible;
+                      localStorage.SetItem("ValorsVisible",ValorsVisible);
+                  })">
+            Valors
+        </button>
+        <button @onclick="@(() =>
+                  {
+                      ScriptsVisible = !ScriptsVisible;
+                      localStorage.SetItem("ScriptsVisible",ScriptsVisible);
+                  })">
+            Script
+        </button>
+<article class="content px-4">
+    
+    <LlistaValors OnSelectedValor="@ValorSeleccionat" Visible="@ValorsVisible" Variable="@VariableActual" />
+    <ScriptAuscultacio OnCalculatScript="@CalculatScript" Visible="@ScriptsVisible" Valors="@ValorsSeleccionats" TextScript="@ScriptActual"></ScriptAuscultacio>
+</article>
+</TabsContent>
+@code
+{
+    public Variable VariableActual { get; set; } = new Variable()
+    {
+        id = -1
+    };
+
+    public List<Valor> ValorsSeleccionats = new List<Valor>();
+
+    bool VariablesVisible = true;
+    bool ValorsVisible = false;
+    bool ScriptsVisible = false;
+    bool inicialitzat = false;
+    private string ScriptActual;
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!inicialitzat)
+        {
+            var uri = new UriBuilder(MyNavigationManager.Uri);
+            api.Host = uri.Host;
+
+            var variable = await localStorage.GetItemAsync<Variable>("VariableAuscultacio");
+            if (variable != null)
+            {
+                VariableActual = variable;
+            }
+
+            var valors = await localStorage.GetItemAsync<Valor[]>("ValorsAuscultacio");
+
+            if (valors != null)
+            {
+                ValorsSeleccionats.AddRange(valors);
+            }
+
+            VariablesVisible = await localStorage.GetItemAsync<bool>("VariablesVisible");
+            ValorsVisible = await localStorage.GetItemAsync<bool>("ValorsVisible");
+            ScriptsVisible = await localStorage.GetItemAsync<bool>("ScriptsVisible");
+
+            var script = await localStorage.GetItemAsync<string>("ScriptAuscultacio");
+
+            if (script != null)
+            {
+                ScriptActual = script;
+            }
+
+            inicialitzat = true;
+        }
+    }
+
+    private void SelectedTab(string tag)
+    {
+        localStorage.SetItem("VariablesVisible",VariablesVisible);
+        localStorage.SetItem("ValorsVisible",ValorsVisible);
+        localStorage.SetItem("ScriptsVisible",ScriptsVisible);
+    }
+
+    private void ValorSeleccionat(Valor v)
+    {
+        if (ValorsSeleccionats.Contains(v))
+        {
+            ValorsSeleccionats.Remove(v);
+        }
+        else
+        {
+            ValorsSeleccionats.Add(v);
+        }
+
+        ValorsSeleccionats.Sort();
+
+        localStorage.SetItem("ValorsAuscultacio", ValorsSeleccionats.ToArray());
+    }
+
+    private void CalculatScript(string s)
+    {
+        localStorage.SetItem("ScriptAuscultacio", s);
+    }
+
+    private void VariableSeleccionada(Variable v)
+    {
+        VariableActual = v;
+
+        ValorsSeleccionats.Clear();
+
+        localStorage.SetItem("VariableAuscultacio", v);
+        localStorage.SetItem("ValorsAuscultacio", new Valor[0]);
+    }
+}
