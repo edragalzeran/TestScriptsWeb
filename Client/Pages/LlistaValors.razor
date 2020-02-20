@@ -1,6 +1,8 @@
 ﻿@page "/valors"
 
 @using BlazorTable
+@using Blazorise
+@using Blazorise.DataGrid
 @using System.ComponentModel
 @using System.Security.Cryptography.X509Certificates
 @using Newtonsoft.Json
@@ -9,12 +11,11 @@
 @inject AuscultacioApi api;
 @if (Visible)
 {
-    <h3>VALORS</h3>
     @if (_valors == null)
     {
         if (Variable.id >= 0)
         {
-            <p><em>Cagando valores...</em></p>
+    <TextEdit IsPlaintext="true" @bind-Text="@_missatge" />
         }
         else
         {
@@ -25,15 +26,15 @@
     {
         <input type="date" class="form-control form-control-sm" @bind-value="_data"/>
         <button @onclick="AsyncRecarrega">Recarrega</button>
-        <Table TableItem="Valor" Items="_valors" PageSize="15" ColumnReorder="true" TableRowClass="@(x => x.RowClass)" OnSelectedItem="@OnSelectedValor" MultiSelect="true">
-            <Column TableItem="Valor" Title="Id" Field="@(x => x.idValor)" Sortable="true" Filterable="true" Width="10%" />
-            <Column TableItem="Valor" Title="DataHora" Field="@(x => x.dataHoraValor)" Sortable="true" Filterable="true" Width="10%" />
-            <Column TableItem="Valor" Title="Valor" Field="@(x => x.valor)" Sortable="true" Filterable="true" Width="10%" />
-            <Column TableItem="Valor" Title="Observacions" Field="@(x => x.observacions)" Sortable="true" Filterable="true" Width="20%" />
-            <Column TableItem="Valor" Title="Estat" Field="@(x => x.tipusEstatValor)" Sortable="true" Filterable="true" Width="10%" />
-            <Column TableItem="Valor" Title="Tipus" Field="@(x => x.tipusValor)" Sortable="true" Filterable="true" Width="10%" />
-            <Pager ShowPageNumber="true" ShowTotalCount="true" />
-        </Table>
+        <BlazorTable.Table TableItem="Valor" Items="_valors" PageSize="15" ColumnReorder="true" TableRowClass="@(x => x.RowClass)" OnSelectedItem="@OnSelectedValor" MultiSelect="true">
+            <BlazorTable.Column TableItem="Valor" Title="Id" Field="@(x => x.idValor)" Sortable="true" Filterable="true" Width="10%"/>
+            <BlazorTable.Column TableItem="Valor" Title="DataHora" Field="@(x => x.dataHoraValor)" Sortable="true" Filterable="true" Width="10%"/>
+            <BlazorTable.Column TableItem="Valor" Title="Valor" Field="@(x => x.valor)" Sortable="true" Filterable="true" Width="10%"/>
+            <BlazorTable.Column TableItem="Valor" Title="Observacions" Field="@(x => x.observacions)" Sortable="true" Filterable="true" Width="20%"/>
+            <BlazorTable.Column TableItem="Valor" Title="Estat" Field="@(x => x.tipusEstatValor)" Sortable="true" Filterable="true" Width="10%"/>
+            <BlazorTable.Column TableItem="Valor" Title="Tipus" Field="@(x => x.tipusValor)" Sortable="true" Filterable="true" Width="10%"/>
+            <Pager ShowPageNumber="true" ShowTotalCount="true"/>
+        </BlazorTable.Table>
     }
 }
 
@@ -42,11 +43,15 @@
 
     DateTime _data = new DateTime(DateTime.Now.Year, 1, 1);
 
+    DataGrid<Valor> _dataGrid;
+
+    string _missatge { get; set; } = "Cagando...";
+
     [Parameter]
     public EventCallback<Valor> OnSelectedValor { get; set; }
 
     [Parameter]
-    public bool Visible { get; set; }
+    public bool Visible { get; set; } = true;
 
     [Parameter]
     public Variable Variable { get; set; }
@@ -64,11 +69,18 @@
 
             var missatge = await client.GetAsync(api._debugUri + "/Consulta_Valors_Variable/" + Variable.id + "/" + _data.ToString("O"));
 
-            var resposta = await missatge.Content.ReadAsStringAsync();
+            if (missatge.IsSuccessStatusCode)
+            {
+                var resposta = await missatge.Content.ReadAsStringAsync();
 
-            _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
+                _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
 
-            _variableCarregada = Variable;
+                _variableCarregada = Variable;
+            }
+            else
+            {
+                _missatge = missatge.StatusCode.ToString();
+            }
         }
     }
 
@@ -78,11 +90,15 @@
 
         var missatge = await client.GetAsync(api._debugUri + "/Consulta_Valors_Variable/" + Variable.id + "/" + _data.ToString("O"));
 
-        var resposta = await missatge.Content.ReadAsStringAsync();
+        if (missatge.IsSuccessStatusCode)
+        {
+            var resposta = await missatge.Content.ReadAsStringAsync();
 
-        _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
+            _valors = JsonConvert.DeserializeObject<Valor[]>(resposta);
 
-        _variableCarregada = Variable;
+            _variableCarregada = Variable;
+        }
+        else _missatge = missatge.StatusCode.ToString();
     }
 
 }

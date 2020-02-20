@@ -1,5 +1,6 @@
 ﻿@page "/script"
 @using System.Collections
+@using Microsoft.AspNetCore.Blazor.Http
 @using Newtonsoft.Json
 @inject HttpClient client;
 @inject AuscultacioApi api;
@@ -10,7 +11,7 @@
     <h3>Script</h3>
     @if (_recalculant)
     {
-        <p><em>Recalculant...</em></p>
+        <TextEdit IsPlaintext="true" @bind-Text="@_missatge"/>
     }
     else
     {
@@ -46,17 +47,22 @@
     </p>
     <textarea @bind="TextScript" cols="80" rows="25"></textarea>
 }
+
+
 @code {
 
     private readonly List<RequestHeader> _requestHeaders = new List<RequestHeader>()
     {
         new RequestHeader() {Name = "Content-Type", Value = "application/json"},
+        new RequestHeader(){Name="Access-Control-Allow-Origin",Value="http://localhost"},
     };
+
+    string _missatge { get; set; } = "Recalculant...";
 
     [Parameter] public string TextScript { get; set; }
 
     [Parameter]
-    public bool Visible { get; set; }
+    public bool Visible { get; set; } = true;
 
     [Parameter]
     public IEnumerable<Valor> Valors { get; set; }
@@ -72,6 +78,8 @@
     {
         _valorsRecalculats = null;
         _recalculant = true;
+        _missatge = "Recalculant...";
+
 
         var dadesBody = new
         {
@@ -84,9 +92,15 @@
         var requestMessage = new HttpRequestMessage()
         {
             Method = HttpMethod.Post,
-            RequestUri = new Uri(api._debugUri + "/debug/Recalcula_Valors"),
-            Content = content
+            RequestUri = new Uri(api._debugUri + "/Recalcula_Valors"),
+            Content = content,
+
         };
+
+        /*requestMessage.Properties[WebAssemblyHttpMessageHandler.FetchArgs] = new
+        {
+            credentials = "include"
+        };*/
 
         foreach (var header in _requestHeaders)
         {
@@ -107,11 +121,18 @@
 
         var missatge = await client.SendAsync(requestMessage);
 
-        var resposta = await missatge.Content.ReadAsStringAsync();
+        if (missatge.IsSuccessStatusCode)
+        {
+            var resposta = await missatge.Content.ReadAsStringAsync();
 
-        _valorsRecalculats = JsonConvert.DeserializeObject<ValorsRecalculats[]>(resposta);
-        await OnCalculatScript.InvokeAsync(TextScript);
-        _recalculant = false;
+            _valorsRecalculats = JsonConvert.DeserializeObject<ValorsRecalculats[]>(resposta);
+            await OnCalculatScript.InvokeAsync(TextScript);
+            _recalculant = false;
+        }
+        else
+        {
+            _missatge = missatge.StatusCode.ToString();
+        }
     }
 
     private class ValorsRecalculats

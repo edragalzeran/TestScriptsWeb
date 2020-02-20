@@ -23,7 +23,7 @@ namespace TestScriptsWeb.Client
 
                 _debugUri = "http://" + _host + ":15344/debug";
 
-                //_localStorage.SetItem("AuscultacioHost", _host);
+                _localStorage.SetItem("AuscultacioHost", _host);
             }
         }
 
@@ -33,15 +33,15 @@ namespace TestScriptsWeb.Client
             var host = localStorage.GetItem<string>("AuscultacioHost");
 
             if (String.IsNullOrEmpty(host))
-                _host = "http://localhost";
+                _host = "localhost";
             else _host = host;
 
-            _debugUri = _host + ":15344/debug";
+            _debugUri = "http://" + _host + ":15344/debug";
         }
 
         public string _debugUri;
 
-        private string _host="http://localhost";
+        private string _host="localhost";
     }
 
 

@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="Blazorise" Version="0.8.8.2" />
     <PackageReference Include="Blazorise.Bootstrap" Version="0.8.8.2" />
+    <PackageReference Include="Blazorise.DataGrid" Version="0.8.8.2" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="0.8.8.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor" Version="3.0.0-preview9.19465.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="3.0.0-preview9.19465.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.HttpClient" Version="3.0.0-preview9.19465.2" />
@@ -18,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Utils\BlazorTable\BlazorTable.csproj" />
-    <ProjectReference Include="..\Shared\TestScriptsWeb.Shared.csproj" />
   </ItemGroup>
 
 </Project>

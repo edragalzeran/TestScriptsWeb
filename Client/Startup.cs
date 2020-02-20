@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Blazorise;
 using Blazorise.Bootstrap;
+using Blazorise.Icons.FontAwesome;
 
 namespace TestScriptsWeb.Client
 {
@@ -17,13 +18,13 @@ namespace TestScriptsWeb.Client
                 {
                     options.ChangeTextOnKeyPress = true; // optional
                 })
-                .AddBootstrapProviders();
+                .AddBootstrapProviders().AddFontAwesomeIcons();
         }
 
         public void Configure(IComponentsApplicationBuilder app)
         {
             app.Services
-                .UseBootstrapProviders();
+                .UseBootstrapProviders().UseFontAwesomeIcons();
             app.AddComponent<App>("app");
         }
     }

@@ -26,11 +26,11 @@ namespace TestScriptsWeb.Server
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseCors(policy =>
-                policy.WithOrigins("http://localhost:5000", "https://localhost:5001")
+            /*app.UseCors(policy =>
+                policy.WithOrigins("localhost")
                     .AllowAnyMethod()
                     .WithHeaders(HeaderNames.ContentType)
-                    .AllowCredentials());
+                    .AllowCredentials());*/
 
             app.UseResponseCompression();
 

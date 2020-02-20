@@ -1,72 +1,85 @@
 ﻿@page "/"
-@using Blazorise
 @inject AuscultacioApi api
 @inject LocalStorageService localStorage
 @inject NavigationManager MyNavigationManager
 
-
-<header class="top-row px-4">
-    <!--<p>@api._debugUri</p>-->    
-        <p>Variable: @VariableActual.codi</p>    
-</header>
-    <Tabs  SelectedTabChanged="@SelectedTab">
+<Card>
+    <CardHeader>
+        <header>
+            <TextEdit @bind-Text="@api.Host" />
+            <p>Variable: @VariableActual.codi</p>
+        </header>
+    </CardHeader>
+    <CardBody>
+    <Tabs SelectedTabChanged="@SelectedTab">
         <Tab Name="variables" IsActive="@VariablesVisible">Variables</Tab>
         <Tab Name="valors" IsActive="@ValorsVisible">Valors</Tab>
         <Tab Name="script" IsActive="@ScriptsVisible">Script</Tab>
     </Tabs>
-    <TabsContent>
+    <TabsContent @ref="tabContent">
         <TabPanel Name="variables" IsActive="@VariablesVisible">
-            <LlistaVariables OnSelectedVariable="@VariableSeleccionada" Visible="@VariablesVisible"></LlistaVariables>
+            <h3>VARIABLES</h3>
+            <LlistaVariables OnSelectedVariable="@VariableSeleccionada" Visible="true"></LlistaVariables>
         </TabPanel>
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Data</th>
-                    <th>Valor</th>
-                    <th>Observacions</th>
-                    <th>Tipus Estat</th>
-                </tr>
-            </thead>
-            @foreach (var valor in ValorsSeleccionats)
-            {
-                <tr>
-                    <td>@valor.idValor</td>
-                    <td>@valor.dataHoraValor</td>
-                    <td>@valor.valor</td>
-                    <td>@valor.observacions</td>
-                    <td>@valor.tipusEstatValor</td>
-                </tr>
-            }
-        </table>
+        <TabPanel Name="valors" IsActive="@ValorsVisible">
+            <h3>VALORS</h3>
+            <Row>
+                <Column>
+                    <LlistaValors OnSelectedValor="@ValorSeleccionat" Variable="@VariableActual" />
+                </Column>
+                <Column>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Data</th>
+                                <th>Valor</th>
+                                <th>Observacions</th>
+                                <th>Tipus Estat</th>
+                            </tr>
+                        </thead>
+                        @foreach (var valor in ValorsSeleccionats)
+                        {
+                            <tr>
+                                <td>@valor.idValor</td>
+                                <td>@valor.dataHoraValor</td>
+                                <td>@valor.valor</td>
+                                <td>@valor.observacions</td>
+                                <td>@valor.tipusEstatValor</td>
+                            </tr>
+                        }
+                    </table>
+                </Column>
+            </Row>
+        </TabPanel>
+        <TabPanel Name="script" IsActive="@ScriptsVisible">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                        <th>Observacions</th>
+                        <th>Tipus Estat</th>
+                    </tr>
+                </thead>
+                @foreach (var valor in ValorsSeleccionats)
+                {
+                    <tr>
+                        <td>@valor.idValor</td>
+                        <td>@valor.dataHoraValor</td>
+                        <td>@valor.valor</td>
+                        <td>@valor.observacions</td>
+                        <td>@valor.tipusEstatValor</td>
+                    </tr>
+                }
+            </table>
+            <ScriptAuscultacio OnCalculatScript="@CalculatScript" Valors="@ValorsSeleccionats" TextScript="@ScriptActual"></ScriptAuscultacio>
+        </TabPanel>
+    </TabsContent>
+    </CardBody>
+</Card>
 
-        <button @onclick="@(() =>
-                  {
-                      VariablesVisible = !VariablesVisible;
-                      localStorage.SetItem("VariablesVisible",VariablesVisible);
-                  })">
-            Variables
-        </button>
-        <button @onclick="@(() =>
-                  {
-                      ValorsVisible = !ValorsVisible;
-                      localStorage.SetItem("ValorsVisible",ValorsVisible);
-                  })">
-            Valors
-        </button>
-        <button @onclick="@(() =>
-                  {
-                      ScriptsVisible = !ScriptsVisible;
-                      localStorage.SetItem("ScriptsVisible",ScriptsVisible);
-                  })">
-            Script
-        </button>
-<article class="content px-4">
-    
-    <LlistaValors OnSelectedValor="@ValorSeleccionat" Visible="@ValorsVisible" Variable="@VariableActual" />
-    <ScriptAuscultacio OnCalculatScript="@CalculatScript" Visible="@ScriptsVisible" Valors="@ValorsSeleccionats" TextScript="@ScriptActual"></ScriptAuscultacio>
-</article>
-</TabsContent>
 @code
 {
     public Variable VariableActual { get; set; } = new Variable()
@@ -76,13 +89,13 @@
 
     public List<Valor> ValorsSeleccionats = new List<Valor>();
 
-    bool VariablesVisible = true;
-    bool ValorsVisible = false;
-    bool ScriptsVisible = false;
+    bool VariablesVisible { get; set; }
+    bool ValorsVisible { get; set; }
+    bool ScriptsVisible { get; set; }
     bool inicialitzat = false;
     private string ScriptActual;
 
-
+    private TabsContent tabContent;
 
 
     protected override async Task OnInitializedAsync()
@@ -90,7 +103,7 @@
         if (!inicialitzat)
         {
             var uri = new UriBuilder(MyNavigationManager.Uri);
-            api.Host = uri.Host;
+            //api.Host = uri.Host;
 
             var variable = await localStorage.GetItemAsync<Variable>("VariableAuscultacio");
             if (variable != null)
@@ -122,9 +135,33 @@
 
     private void SelectedTab(string tag)
     {
-        localStorage.SetItem("VariablesVisible",VariablesVisible);
-        localStorage.SetItem("ValorsVisible",ValorsVisible);
-        localStorage.SetItem("ScriptsVisible",ScriptsVisible);
+        switch (tag)
+        {
+            case "variables":
+                ValorsVisible = false;
+                ScriptsVisible = false;
+                VariablesVisible = true;
+                break;
+
+            case "valors":
+                ValorsVisible = true;
+                VariablesVisible = false;
+                ScriptsVisible = false;
+                break;
+
+            case "script":
+                ScriptsVisible = true;
+                ValorsVisible = false;
+                VariablesVisible = false;
+                break;
+        }
+
+        tabContent.SelectPanel(tag);
+
+        localStorage.SetItem("VariablesVisible", VariablesVisible);
+        localStorage.SetItem("ValorsVisible", ValorsVisible);
+        localStorage.SetItem("ScriptsVisible", ScriptsVisible);
+
     }
 
     private void ValorSeleccionat(Valor v)
